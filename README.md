@@ -1,10 +1,6 @@
 # Arrow Pad Keyboard
 
 
- 
-This repo allows you to build custom keypad keyboard. 
-
-
 There are 2 versions of PCB design due to chip shortage. Folder "VIMorKeypad_Keyboard" contains STM Cube IDE project which can be compiled for every µC and keybinding can be also modified. "main.c" is just main code in STM Cube IDE project.
 
 
