@@ -310,7 +310,6 @@ static void MX_GPIO_Init(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 
 	if (htim == &htim2) {
-
 		keys.SW_Key[0] = HAL_GPIO_ReadPin(GPIOA, SW1_Pin);
 		keys.SW_Key[1] = HAL_GPIO_ReadPin(GPIOA, SW2_Pin);
 		keys.SW_Key[2] = HAL_GPIO_ReadPin(GPIOA, SW3_Pin);
@@ -320,9 +319,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 
 		/**** The bouncing ****/
 		for (int i = 0; i < 6; i++) {
-
 			keys.SW_State[i] = (keys.SW_State[i] << 1) | keys.SW_Key[i] | 0xe000;
-
 		}
 
 		HAL_TIM_Base_Start_IT(&htim2);
@@ -354,11 +351,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 		 */
 
 		for (int i = 0; i < 6; i++) {
-
 			if (keys.SW_State[i] == 0xe000) {
-
 				switch (i) {
-
 					case 0 :
 						keys.Pressed[i] = 82; //Up
 						break;
@@ -383,21 +377,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 						keys.Pressed[i] = 41; //Escape
 						break;
 				}
-
 			} else {
-
 				keys.Pressed[i] = 0;
-
 			}
 		}
 
-
 		for (int i = 0, j = 0; i < 6 && j < 3; i++) {
-
 			if (keys.Pressed[i] != 0) {
-
 				switch (j) {
-
 					case 0 :
 						keyboardHID.key1 = keys.Pressed[i];
 						break;
@@ -412,7 +399,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 				}
 
 				j++;
-
 			}
 		}
 
@@ -424,7 +410,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 		keyboardHID.key3 = 0;
 
 		HAL_TIM_Base_Start_IT(&htim3);
-
 	}
 }
 
