@@ -53,20 +53,28 @@ TIM_HandleTypeDef htim3;
 struct KEYS {
 
 	uint16_t SW_State[6];
-	uint8_t	 Pressed[6];
 	bool	 SW_Key[6];
+	bool	 flip_flop;
 
 } keys;
 
 struct keyboardHID_t {
 
 	uint8_t id;
-	uint8_t modifiers;
 	uint8_t key1;
 	uint8_t key2;
 	uint8_t key3;
 
 } keyboardHID;
+
+struct consumerHID_t {
+
+	uint8_t id;
+	uint8_t key1;
+	uint8_t key2;
+	uint8_t key3;
+
+} consumerHID;
 
 /* USER CODE END PV */
 
@@ -100,15 +108,20 @@ int main(void)
 
 		keys.SW_State[i] = 0;
 		keys.SW_Key[i] 	 = 0;
-		keys.Pressed[i]	 = 0;
 
 	}
 
-	keyboardHID.id = 1;
-	keyboardHID.modifiers = 0;
+	keyboardHID.id	 = 1;
 	keyboardHID.key1 = 0;
 	keyboardHID.key2 = 0;
 	keyboardHID.key3 = 0;
+
+	consumerHID.id 	 = 2;
+	consumerHID.key1 = 0;
+	consumerHID.key2 = 0;
+	consumerHID.key3 = 0;
+
+	keys.flip_flop = 0;
 
   /* USER CODE END 1 */
 
@@ -257,9 +270,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 48 - 1;
+  htim3.Init.Prescaler = 24 - 1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 1000 - 1;
+  htim3.Init.Period = 100 - 1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -331,8 +344,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 
 		/* If you want to change the keys:
 		 *
-		 * Universal Serial Bus HID Usage Tables
-		 * Pages 53-59
+		 * Universal Serial Bus HID Usage Tables v1.5
+		 * Pages 89 - 95
 		 *
 		 * 11 - H
 		 * 13 - J
@@ -354,60 +367,53 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 			if (keys.SW_State[i] == 0xe000) {
 				switch (i) {
 					case 0 :
-						keys.Pressed[i] = 82; //Up
+						keyboardHID.key1 = 127; //Mute
 						break;
 
 					case 1 :
-						keys.Pressed[i] = 81; //Down
+						consumerHID.key1 = 205; //Play/Pause
 						break;
 
 					case 2 :
-						keys.Pressed[i] = 79; //Right
+						consumerHID.key1 = 181; //Next Track
 						break;
 
 					case 3 :
-						keys.Pressed[i] = 80; //Left
+						consumerHID.key1 = 182; //Previous Track
 						break;
 
 					case 4 :
-						keys.Pressed[i] = 40; //Enter
+						keyboardHID.key2 = 128; //Vol. Down
 						break;
 
 					case 5 :
-						keys.Pressed[i] = 41; //Escape
+						keyboardHID.key3 = 129; //Vol. Up
 						break;
 				}
-			} else {
-				keys.Pressed[i] = 0;
 			}
 		}
 
-		for (int i = 0, j = 0; i < 6 && j < 3; i++) {
-			if (keys.Pressed[i] != 0) {
-				switch (j) {
-					case 0 :
-						keyboardHID.key1 = keys.Pressed[i];
-						break;
+		if (keys.flip_flop == 0) {
+			/**** Sending USB Keyboard Report to the Host Device ****/
+			USBD_HID_SendReport(&hUsbDeviceFS, &keyboardHID, sizeof(struct keyboardHID_t));
 
-					case 1 :
-						keyboardHID.key2 = keys.Pressed[i];
-						break;
+			keyboardHID.key1 = 0;
+			keyboardHID.key2 = 0;
+			keyboardHID.key3 = 0;
 
-					case 2 :
-						keyboardHID.key3 = keys.Pressed[i];
-						break;
-				}
+			keys.flip_flop = 1;
 
-				j++;
-			}
+		} else {
+			/**** Sending USB Consumer Report to the Host Device ****/
+			USBD_HID_SendReport(&hUsbDeviceFS, &consumerHID, sizeof(struct consumerHID_t));
+
+			consumerHID.key1 = 0;
+			consumerHID.key2 = 0;
+			consumerHID.key3 = 0;
+
+			keys.flip_flop = 0;
+
 		}
-
-		/**** Sending USB Report to the Host Device ****/
-		USBD_HID_SendReport(&hUsbDeviceFS, &keyboardHID, sizeof(struct keyboardHID_t));
-
-		keyboardHID.key1 = 0;
-		keyboardHID.key2 = 0;
-		keyboardHID.key3 = 0;
 
 		HAL_TIM_Base_Start_IT(&htim3);
 	}
